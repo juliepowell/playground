@@ -66,15 +66,15 @@
         /*****************************************************************
          * Animate to the layer's full extent when the layer loads.
          *****************************************************************/
-        /*featureLayer.then(function() {
+        featureLayer.then(function() {
           view.animateTo(featureLayer.fullExtent);
-        });*/
+        });
         
         //test
-        watchUtils.whenOnce(view,"ready")
+        /*watchUtils.whenOnce(view,"ready")
 	.then(function() {
 	  view.animateTo({ target: featureLayer.fullExtent });
-	});
+	});*/
         
       });
   </script>
