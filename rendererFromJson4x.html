@@ -21,12 +21,13 @@
         "esri/Map",
         "esri/views/SceneView",
         "esri/layers/FeatureLayer",
-		"esri/renderers/ClassBreaksRenderer",
-		"esri/renderers/support/jsonUtils",
+	"esri/renderers/ClassBreaksRenderer",
+	"esri/renderers/support/jsonUtils",
+	"esri/core/watchUtils",
         "dojo/domReady!"
       ],
       function(
-        Map, SceneView, FeatureLayer, ClassBreaksRenderer, jsonUtil
+        Map, SceneView, FeatureLayer, ClassBreaksRenderer, jsonUtils, watchUtils
       ) {
 	  
 	  
@@ -65,9 +66,16 @@
         /*****************************************************************
          * Animate to the layer's full extent when the layer loads.
          *****************************************************************/
-        featureLayer.then(function() {
+        /*featureLayer.then(function() {
           view.animateTo(featureLayer.fullExtent);
-        });
+        });*/
+        
+        //test
+        watchUtils.whenOnce(view,"ready")
+	.then(function() {
+	  view.animateTo({ target: featureLayer.fullExtent });
+	});
+        
       });
   </script>
 </head>
