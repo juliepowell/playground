@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Harvested Land</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.0beta3/esri/css/main.css">
+  <script src="https://js.arcgis.com/4.0beta3/"></script>
+
+  <style>
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+
+  <script>
+    require([
+        "esri/Map",
+        "esri/views/SceneView",
+        "esri/layers/FeatureLayer",
+	"esri/renderers/ClassBreaksRenderer",
+	"esri/renderers/support/jsonUtils",
+	"esri/core/watchUtils",
+        "dojo/domReady!"
+      ],
+      function(
+        Map, SceneView, FeatureLayer, ClassBreaksRenderer, jsonUtils, watchUtils
+      ) {
+	  
+	  
+		/*****************************************************************
+		 * Define the renderer JSON and create the renderer
+		 *****************************************************************/
+		
+		var urvJson = {"visualVariables":[{"type":"colorInfo","field":"M089_07","stops":[{"value":12,"color":[255,252,212,255],"label":"< 12"},{"value":25,"color":[231,174,157,255],"label":null},{"value":38,"color":[206,96,101,255],"label":"38"},{"value":51,"color":[136,49,79,255],"label":null},{"value":64,"color":[66,2,57,255],"label":"> 64"}]}],"type":"classBreaks","field":"M089_07","defaultSymbol":{"color":[170,170,170,255],"outline":{"color":[153,153,153,128],"width":0.375,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"minValue":-9007199254740991,"classBreakInfos":[{"symbol":{"color":[170,170,170,255],"outline":{"color":[153,153,153,128],"width":0.375,"type":"esriSLS","style":"esriSLSSolid"},"type":"esriSFS","style":"esriSFSSolid"},"classMaxValue":9007199254740991}],"defaultLabel":"Other"};
+		
+        var renderer = ClassBreaksRenderer.fromJSON(urvJson);
+
+		/*****************************************************************
+		 * Create the Feature layer
+		 *****************************************************************/
+		var url =
+        "http://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/US_county_crops_2007_clean/FeatureServer/0";
+		var featureLayer = new FeatureLayer({
+			url: url,
+			outFields: ["*"],
+			renderer: renderer //set the ClassBreaksRenderer on the layer
+		});
+		
+        /*****************************************************************
+         * Create the map with the feature layer
+         *****************************************************************/
+        var map = new Map({
+          basemap: "dark-gray",
+          layers: [featureLayer]
+        });
+
+        var view = new SceneView({
+          container: "viewDiv",
+          map: map
+        });
+
+        /*****************************************************************
+         * Animate to the layer's full extent when the layer loads.
+         *****************************************************************/
+        featureLayer.then(function() {
+          view.animateTo(featureLayer.fullExtent);
+        });
+        
+        //test
+        /*watchUtils.whenOnce(view,"ready")
+	.then(function() {
+	  view.animateTo({ target: featureLayer.fullExtent });
+	});*/
+        
+      });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
