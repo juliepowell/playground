@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title></title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.16/esri/css/esri.css">
+    <style>
+      html, body, #map {
+        height: 100%; width: 100%; margin: 0; padding: 0; 
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/3.16/"></script>
+    <script>
+      var map;
+    
+      require([
+        "esri/map",   
+        "esri/layers/ArcGISTiledMapServiceLayer",
+		"dojo/dom",
+        "dojo/domReady!"
+      ],
+      function(
+        Map,
+        ArcGISTiledMapServiceLayer,
+		dom
+      ) {
+        map = new Map("map", { basemap: "satellite", center: [-85.737, 34.447],
+            zoom: 9 });
+        
+        var CustomTiledLayer = ArcGISTiledMapServiceLayer.createSubclass({
+          _initLayer: function(response, io) {
+            var maplods = map.__tileInfo.lods;
+            response.tileInfo.lods = maplods.map(function(lod) {
+              return lod.toJson();
+            });
+            response.maxScale = 0;
+            this.inherited(arguments);
+          }
+        });
+        
+        var tiled = new CustomTiledLayer("//web3.kcsgis.com/kcsgis/rest/services/Imagery/AL_Dekalb_Imagery_2015/MapServer", { resampling: true, resamplingTolerance: 10 });
+        tiled.on("load", function() {
+          map.setExtent(tiled.fullExtent);
+        });
+        map.addLayer(tiled);
+		map.on("extent-change", changeScale);
+		
+		function changeScale(evt) {
+          dom.byId("scale").innerHTML = "Level: <i>" + evt.lod.level;         
+        }
+		
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map">
+      <span id="scale" style="position:absolute; bottom: 33px;z-index:100;color: coral;font-style=bold;font-size: 32px;font-weight: bold;background-color: whitesmoke;width: 100%;padding: 10px;"></span>
+    </div>
+  </body>
+</html> 
