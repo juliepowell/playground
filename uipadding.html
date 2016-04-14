@@ -1,0 +1,210 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="//jsdev.arcgis.com/4.0/esri/css/main.css" rel="stylesheet" type="text/css">
+
+  <style>
+    html, body{
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 150px;
+    }
+
+    .esri-ui {
+      box-sizing: content-box;
+      z-index: 2;
+    }
+
+    #view-padding {
+      z-index: 1;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 150px;
+      pointer-events: none;
+    }
+
+    #controls {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 150px;
+
+      background-color: #f2f2f2;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .button.active {
+      background-color: #084968;
+      cursor: auto;
+    }
+
+    .button {
+      height: 40px;
+      width: 140px;
+
+      background-color: #12A2E8;
+      color: #fff;
+      font-size: 14px;
+      border: none;
+      margin: 2px 0;
+
+      cursor: pointer;
+    }
+
+    .heading {
+      font-size: 16px;
+      font-family: sans-serif;
+      margin-bottom: 4px;
+      color: #333;
+    }
+
+    .spacer {
+      height: 10px;
+      width: 100%;
+    }
+
+    .esri-ui,
+    .esri-ui-inner-container,
+    .smooth-resize {
+      transition: top .25s, bottom .25s, left .25s, right .25s;
+    }
+
+    .esri-ui-corner {
+      background-color: rgba(255, 176, 45, 0.45);
+      height: 120px;
+      width: 120px;
+    }
+
+    .esri-ui-inner-container:first-child {
+      background-color: rgba(45, 153, 255, 0.45);
+      border: 1px solid #2463CC;
+      z-index: 10;
+    }
+
+    .esri-ui-inner-container:last-child {
+      background-color: rgba(204, 58, 108, 0.25);
+      border: 1px solid crimson;
+      z-index: 1;
+    }
+
+    .isolated-color {
+      color: rgba(204, 58, 108, 1);
+    }
+
+    .corner-color {
+      color: rgba(255, 176, 45, 1);
+    }
+
+    .inner-color {
+      color: rgba(45, 153, 255, 1);
+    }
+  </style>
+
+  <script>
+    var dojoConfig = {
+      async: true,
+      isDebug: true
+    };
+  </script>
+
+  <script src="//jsdev.arcgis.com/4.0/"></script>
+
+  <script type="text/javascript">
+    var map,
+      view;
+
+    window.updateUiPadding = function(amount) {
+      view.ui.padding = amount;
+    };
+
+    window.updateViewPadding = function(size) {
+      view.padding = {
+        top: size,
+        bottom: size,
+        left: size,
+        right: size
+      };
+    };
+
+    require([
+      "dojo/dom",
+      "dojo/dom-class",
+      "dojo/on",
+      "dojo/query",
+
+      "esri/Map",
+      "esri/views/MapView",
+
+      "dojo/domReady!"
+    ], function(
+      dom, domClass, on, query,
+      Map, MapView
+    ) {
+
+      function setupButtonGroup(selector) {
+        var controls = dom.byId("controls");
+
+        on(controls, on.selector(selector, "click"), function(e) {
+          query(selector, controls).removeClass("active");
+          domClass.add(e.target, "active");
+        });
+      }
+
+      setupButtonGroup(".vp-option");
+      setupButtonGroup(".uip-option");
+
+      map = new Map({
+        basemap: "topo",
+        center: [-56.049, 38.485],
+        zoom: 10
+      });
+
+      view = new MapView({
+        container: "map",
+        center: [-56.049, 38.485],
+        zoom: 3,
+        map: map,
+        ui: {
+          padding: 20
+        }
+      });
+    });
+
+  </script>
+</head>
+
+<body>
+  <div id="map"></div>
+  <div id="view-padding" class="smooth-resize"></div>
+  <div id="controls">
+    <div class="heading">View Padding</div>
+    <input class="button vp-option active" type="button" value="0px" onclick="updateViewPadding(0)">
+    <input class="button vp-option" type="button" value="20px" onclick="updateViewPadding(20)">
+    <input class="button vp-option" type="button" value="40px" onclick="updateViewPadding(40)">
+    <div class="spacer"></div>
+    <div class="heading">UI Padding</div>
+    <input class="button uip-option" type="button" value="0px" onclick="updateUiPadding(0)">
+    <input class="button uip-option active" type="button" value="20px" onclick="updateUiPadding(20)">
+    <input class="button uip-option" type="button" value="40px" onclick="updateUiPadding(40)">
+    <div class="spacer"></div>
+    <div class="spacer"></div>
+    <div class="heading corner-color">corner</div>
+    <div class="heading isolated-color">manual</div>
+  </div>
+</body>
+
+</html>
