@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Map</title>
+
+  <link rel="stylesheet" href="//jsdev.arcgis.com/4.0/esri/css/main.css">
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+
+  <script src="//jsdev.arcgis.com/4.0/"></script>
+
+  <script>
+    var map, view;
+
+    require([
+      "esri/Map",
+
+      "esri/views/MapView",
+      "esri/views/SceneView",
+
+      "esri/core/watchUtils",
+      "esri/core/Scheduler",
+
+      "dojo/domReady!"
+    ], function(
+      Map,
+      MapView, SceneView,
+
+      watchUtils,
+      Scheduler
+    ) {
+
+      map = new Map({
+        basemap: 'satellite',
+        ground: 'world-elevation'
+      });
+
+      view1 = new SceneView({
+        id: 'view1',
+        container: 'view1Div',
+        map: map
+      });
+
+      view2 = new MapView({
+        id: 'view2',
+        container: 'view2Div',
+        map: map,
+        constraints: {
+          snapToZoom: false
+        }
+      });
+
+      /**
+       * bind a view to other ones 
+       */
+      var bindView = function(view, others) {
+        others = Array.isArray(others) ? others : [others];
+
+        var viewpointWatchHandle;
+        var viewStationaryHandle;
+        var otherInteractHandlers;
+        var scheduleHandle;
+
+        var clear = function() {
+          if (otherInteractHandlers) {
+            otherInteractHandlers.forEach(function(handle) {
+              handle.remove();
+            });
+          }
+          viewpointWatchHandle && viewpointWatchHandle.remove();
+          viewStationaryHandle && viewStationaryHandle.remove();
+          scheduleHandle && scheduleHandle.remove();
+          otherInteractHandlers = viewpointWatchHandle = viewStationaryHandle = scheduleHandle = null;
+        };
+
+        var interactWatcher = view.watch('interacting,animation', function(newValue) {
+          if (!newValue) {
+            clear();
+            return;
+          }
+          if (viewpointWatchHandle || scheduleHandle) {
+            return;
+          }
+          scheduleHandle = Scheduler.schedule(function() {
+            scheduleHandle = null;
+            viewpointWatchHandle = view.watch('viewpoint', function(newValue) {
+              others.forEach(function(otherView) {
+                otherView.viewpoint = newValue;
+              });
+            });
+            otherInteractHandlers = others.map(function(otherView) {
+              return watchUtils.whenTrue(otherView, 'interacting', clear);
+            });
+            viewStationaryHandle = watchUtils.whenTrue(view, 'stationary', clear);
+          });
+        });
+
+        return {
+          remove: function() {
+            this.remove = function() {};
+            clear();
+            interactWatcher.remove();
+          }
+        }
+      };
+
+      /** 
+       * bind the multiple views together
+       */
+      var bindViews = function(views) {
+        var handles = views.map(function(view, idx, views) {
+          var others = views.concat();
+          others.splice(idx, 1);
+          return bindView(view, others);
+        });
+
+        return {
+          remove: function() {
+            this.remove = function() {};
+            handles.forEach(function(h) {
+              h.remove();
+            });
+            handles = null;
+          }
+        }
+      }
+
+      // bind the views
+      bindViews([view1, view2]);
+
+    });
+  </script>
+</head>
+<body>
+  <div id="view1Div" style="float: left; width: 50%; height: 100%;"></div>
+  <div id="view2Div" style="float: left; width: 50%; height: 100%;"></div>
+</body>
+</html>
