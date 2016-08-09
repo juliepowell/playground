@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Define custom Popup actions - 4.0</title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.0/dijit/themes/claro/claro.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.0/esri/css/main.css">
+  <script src="https://js.arcgis.com/4.0/"></script>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/layers/Layer",
+      "esri/layers/FeatureLayer",
+      "esri/layers/GraphicsLayer",
+      "esri/Graphic",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/SimpleFillSymbol",
+      "esri/symbols/SimpleMarkerSymbol",
+      "esri/views/MapView",
+      "esri/geometry/geometryEngine",
+      "dojo/domReady!"
+    ], function(
+      Map,
+      Layer,
+      FeatureLayer,
+      GraphicsLayer,
+      Graphic,
+      SimpleRenderer,
+      SimpleFillSymbol,
+      SimpleMarkerSymbol,
+      MapView,
+      geometryEngine
+    ) {
+
+      var polySym = new SimpleFillSymbol({
+          color: [255, 255, 255, 0.5],
+          outline: {
+            color: [0, 0, 0, 0.5],
+            width: 2
+          }
+        });
+
+      var markerSym = new SimpleMarkerSymbol({
+          color: [255, 255, 255, 0.5],
+          outline: {
+            color: [0, 0, 0, 0.5],
+            width: 2
+          }
+        });
+
+      var bufferLayer = new GraphicsLayer();
+
+      // Create the Map
+      var map = new Map({
+        basemap: "topo"
+      });
+
+      // Create the MapView
+      var view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-88.152, 41.747],
+        zoom: 17
+      });
+
+
+      /*************************************************************
+       * The PopupTemplate content is the text that appears inside the
+       * popup. Bracketed {fieldName} can be used to reference the value
+       * of an attribute of the selected feature. HTML elements can be
+       * used to provide structure and styles within the content.
+       **************************************************************/
+
+      // Add this action to the popup so it is always available in this view
+      var bufferAction = {
+        title: "Buffer",
+        id: "buffer-this",
+        image: "buffer.png"
+      };
+
+      parksLayer = new FeatureLayer({
+        url: "http://services6.arcgis.com/Pu6Fai10JE2L2xUd/arcgis/rest/services/Parks/FeatureServer/0",
+        outFields: ["*"]
+      });
+
+      parcelLayer = new FeatureLayer({
+        url: "http://tryitlive.arcgis.com/arcgis/rest/services/TaxParcelQueryIL/MapServer/0",
+        outFields: ["*"],
+        //popupTemplate: template
+      });       
+
+      Layer.fromPortalItem({
+          portalItem: { // autocast as esri/portal/PortalItem
+            id: "b6ff65334282454f98bb48e23aa0011d"
+          }
+        }).then(addLayer)
+        .otherwise(rejection);        
+
+      // Adds the layer to the map once it loads
+      function addLayer(lyr) {
+        lyr.then(function(){lyr.popupTemplate.actions = [bufferAction]});        
+        map.add(lyr);
+      }
+
+      function rejection(err) {
+        console.log("Layer failed to load: ", err);
+      }
+      
+      map.addMany([bufferLayer, parksLayer]);      
+
+      // Execute each time "Buffer" is clicked
+      function bufferThis() {
+        var geom = view.popup.selectedFeature.geometry;
+        var buffer = geometryEngine.geodesicBuffer(geom, .15, "miles");
+        bufferLayer.add(new Graphic({
+          geometry: buffer,
+          symbol: polySym
+        }));
+
+        view.whenLayerView(parksLayer).then(function(parksLayerView){          
+          if(parksLayerView.updating){
+            parksLayerView.watch("updating", function(val){
+              if(!val){  // wait for the layer view to finish updating
+                return findNearbyParks(parksLayerView);
+              }
+            });
+          }
+          else {
+            return findNearbyParks(parksLayerView);
+          }
+        }).then (function(parksGeoms){   
+        if(parksGeoms && parksGeoms.length !=0){
+          //find the intersection
+          var intersectionGeoms = geometryEngine.intersect(parksGeoms,buffer);
+          bufferLayer.addMany(intersectionGeoms.map(function(geom){
+            return new Graphic({
+              geometry: geom,
+              symbol: markerSym
+            });
+          }));                    
+        }});
+      }
+
+      function findNearbyParks(view){ 
+        return view.queryFeatures().then(function(results){ 
+          console.log(results); // prints the array of client-side graphics to the console 
+          return getGeometries(results);
+        }); 
+      }
+
+      function getGeometries(/*esri.Graphic[]*/ graphics) {
+        return graphics.map(function(graphic) {
+          return graphic.geometry;
+        });
+      }
+
+      // Event handler that fires each time an action is clicked.
+      view.popup.on("trigger-action", function(evt) {
+        // Execute the bufferThis() function if the measure-this action is clicked
+        if (evt.action.id === "buffer-this") {
+          bufferThis();
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>
