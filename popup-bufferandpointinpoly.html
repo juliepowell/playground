@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>Define custom Popup actions - 4.0</title>
+  <title>Julie is having fun</title>
 
   <style>
     html,
@@ -31,6 +31,9 @@
       "esri/renderers/SimpleRenderer",
       "esri/symbols/SimpleFillSymbol",
       "esri/symbols/SimpleMarkerSymbol",
+      "esri/tasks/QueryTask",
+      "esri/tasks/support/Query",
+      "dojo/_base/array",
       "esri/views/MapView",
       "esri/geometry/geometryEngine",
       "dojo/domReady!"
@@ -43,6 +46,9 @@
       SimpleRenderer,
       SimpleFillSymbol,
       SimpleMarkerSymbol,
+      QueryTask,
+      Query,
+      arrayUtils,
       MapView,
       geometryEngine
     ) {
@@ -63,7 +69,21 @@
           }
         });
 
-      var bufferLayer = new GraphicsLayer();
+
+      /*****************************************************************
+       *  Point QueryTask to URL of feature service  
+       *****************************************************************/
+      var queryTask = new QueryTask({
+        url: "http://services6.arcgis.com/Pu6Fai10JE2L2xUd/arcgis/rest/services/Parks/FeatureServer/0"
+      });
+
+      /******************************************************************    
+       * Set the query parameters to always return geometry and all fields.
+       * Returning geometry allows us to display results on the map/view
+       ******************************************************************/
+      var params = new Query({
+        returnGeometry: true
+      });
 
       // Create the Map
       var map = new Map({
@@ -78,14 +98,18 @@
         zoom: 17
       });
 
-
-      /*************************************************************
-       * The PopupTemplate content is the text that appears inside the
-       * popup. Bracketed {fieldName} can be used to reference the value
-       * of an attribute of the selected feature. HTML elements can be
-       * used to provide structure and styles within the content.
-       **************************************************************/
-
+      // Get the screen point from the view's click event
+      view.on("click", function(evt){
+        // Search for graphics at the clicked location
+        view.hitTest(evt.screenPoint).then(function(response){
+          if(response.results[0].graphic){
+            console.log("Top graphic found! Here it is: ", response.results[0].graphic);
+            bufferLayer.removeAll();
+            resultsLayer.removeAll();
+          }
+        });
+      });
+     
       // Add this action to the popup so it is always available in this view
       var bufferAction = {
         title: "Buffer",
@@ -93,6 +117,7 @@
         image: "buffer.png"
       };
 
+      /* LAYERS */
       parksLayer = new FeatureLayer({
         url: "http://services6.arcgis.com/Pu6Fai10JE2L2xUd/arcgis/rest/services/Parks/FeatureServer/0",
         outFields: ["*"]
@@ -100,16 +125,22 @@
 
       parcelLayer = new FeatureLayer({
         url: "http://tryitlive.arcgis.com/arcgis/rest/services/TaxParcelQueryIL/MapServer/0",
-        outFields: ["*"],
-        //popupTemplate: template
+        outFields: ["*"]
       });       
+
+      bufferLayer = new GraphicsLayer(); 
+      resultsLayer = new GraphicsLayer();
+
+      map.addMany([bufferLayer, resultsLayer, parksLayer]);
 
       Layer.fromPortalItem({
           portalItem: { // autocast as esri/portal/PortalItem
             id: "b6ff65334282454f98bb48e23aa0011d"
           }
         }).then(addLayer)
-        .otherwise(rejection);        
+        .otherwise(rejection);               
+
+      /* METHODS */
 
       // Adds the layer to the map once it loads
       function addLayer(lyr) {
@@ -121,10 +152,9 @@
         console.log("Layer failed to load: ", err);
       }
       
-      map.addMany([bufferLayer, parksLayer]);      
-
       // Execute each time "Buffer" is clicked
       function bufferThis() {
+
         var geom = view.popup.selectedFeature.geometry;
         var buffer = geometryEngine.geodesicBuffer(geom, .15, "miles");
         bufferLayer.add(new Graphic({
@@ -132,41 +162,43 @@
           symbol: polySym
         }));
 
-        view.whenLayerView(parksLayer).then(function(parksLayerView){          
-          if(parksLayerView.updating){
-            parksLayerView.watch("updating", function(val){
-              if(!val){  // wait for the layer view to finish updating
-                return findNearbyParks(parksLayerView);
-              }
-            });
-          }
-          else {
-            return findNearbyParks(parksLayerView);
-          }
-        }).then (function(parksGeoms){   
-        if(parksGeoms && parksGeoms.length !=0){
-          //find the intersection
-          var intersectionGeoms = geometryEngine.intersect(parksGeoms,buffer);
-          bufferLayer.addMany(intersectionGeoms.map(function(geom){
-            return new Graphic({
-              geometry: geom,
-              symbol: markerSym
-            });
-          }));                    
-        }});
+        // animate to the results after they are added to the map  
+        view.goTo(buffer);
+
+        doQuery(buffer);
+      }
+    
+      function doQuery(geom) {
+        params.geometry = geom;
+
+        queryTask.execute(params)
+          .then(getResults)
+          .otherwise(promiseRejected);
       }
 
-      function findNearbyParks(view){ 
-        return view.queryFeatures().then(function(results){ 
-          console.log(results); // prints the array of client-side graphics to the console 
-          return getGeometries(results);
-        }); 
+      // Called each time the promise is resolved    
+      function getResults(response) {
+
+        // Loop through each of the results and assign a symbol 
+        var results = arrayUtils.map(response.features, function(feature) {
+            feature.symbol = new SimpleMarkerSymbol({
+              style: "circle",
+              size: 20,
+              color: [211, 255, 0, 0],
+              outline: {
+                width: 3,
+                color: "#000000",
+                style: "solid"}});
+
+            return feature;
+
+          });
+        resultsLayer.addMany(results);
       }
 
-      function getGeometries(/*esri.Graphic[]*/ graphics) {
-        return graphics.map(function(graphic) {
-          return graphic.geometry;
-        });
+      // Called each time the promise is rejected    
+      function promiseRejected(err) {
+        console.error("Promise rejected: ", err.message);
       }
 
       // Event handler that fires each time an action is clicked.
