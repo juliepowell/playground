@@ -94,8 +94,8 @@
       var view = new MapView({
         container: "viewDiv",
         map: map,
-        center: [-88.152, 41.747],
-        zoom: 17
+        center: [-88.132, 41.762],
+        zoom: 16
       });
 
       // Get the screen point from the view's click event
@@ -124,7 +124,7 @@
       });
 
       parcelLayer = new FeatureLayer({
-        url: "http://tryitlive.arcgis.com/arcgis/rest/services/TaxParcelQueryIL/MapServer/0",
+        url: "http://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/NapervilleParcelPoints/FeatureServer/0",
         outFields: ["*"]
       });       
 
@@ -135,7 +135,7 @@
 
       Layer.fromPortalItem({
           portalItem: { // autocast as esri/portal/PortalItem
-            id: "b6ff65334282454f98bb48e23aa0011d"
+            id: "737f33ee376a487c8a3211fd736fad14"
           }
         }).then(addLayer)
         .otherwise(rejection);               
@@ -156,14 +156,14 @@
       function bufferThis() {
 
         var geom = view.popup.selectedFeature.geometry;
-        var buffer = geometryEngine.geodesicBuffer(geom, .15, "miles");
+        var buffer = geometryEngine.geodesicBuffer(geom, .5, "miles");
         bufferLayer.add(new Graphic({
           geometry: buffer,
           symbol: polySym
         }));
 
         // animate to the results after they are added to the map  
-        view.goTo(buffer);
+        //view.goTo(buffer);
 
         doQuery(buffer);
       }
