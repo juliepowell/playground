@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"
+  />
+  <title>Vector tiles - 4.2</title>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.2/esri/css/main.css">
+  <script src="https://jsdev.arcgis.com/4.2/"></script>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/SceneView",
+      "esri/layers/VectorTileLayer",
+      "esri/layers/MapImageLayer",
+      "dojo/domReady!"
+    ], function(Map, SceneView, VectorTileLayer, MapImageLayer) {
+      // Create a Map
+      var map = new Map();
+      // Make map view and bind it to the map
+      var view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        center: [-100.33, 25.69],
+        zoom: 4
+      });
+      /********************************************************************  
+       * Add a tile layer to the map
+       * 
+       * The url property must either point to the style as 
+       * demonstrated below or to the URL of a Vector Tile service 
+       * such as: 
+       * https://basemaps.arcgis.com/b2/arcgis/rest/services/World_Basemap/VectorTileServer
+       *********************************************************************/
+      var tileLyr = new VectorTileLayer({
+        url: "https://www.arcgis.com/sharing/rest/content/items/70af9274d69042f3a31fe64c9945cc07/resources/styles/root.json"
+      });
+      
+      var weatherLyr = new MapImageLayer({
+          portalItem: {
+            id: "da53700b1f324cc685c4d3bcc00c12fc"
+          }
+        });
+        
+      map.addMany([tileLyr,weatherLyr]);
+    });
+  </script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+</body>
+</html>
