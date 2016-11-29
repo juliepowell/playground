@@ -25,9 +25,8 @@
       "esri/Map",
       "esri/views/SceneView",
       "esri/layers/VectorTileLayer",
-      "esri/layers/MapImageLayer",
       "dojo/domReady!"
-    ], function(Map, SceneView, VectorTileLayer, MapImageLayer) {
+    ], function(Map, SceneView, VectorTileLayer) {
       // Create a Map
       var map = new Map();
       // Make map view and bind it to the map
@@ -50,14 +49,8 @@
       var tileLyr = new VectorTileLayer({
         url: "http://devext.arcgis.com/sharing/rest/content/items/70af9274d69042f3a31fe64c9945cc07/resources/styles/root.json"
       });
-      
-      var weatherLyr = new MapImageLayer({
-          portalItem: {
-            id: "da53700b1f324cc685c4d3bcc00c12fc"
-          }
-        });
         
-      map.addMany([tileLyr,weatherLyr]);
+      map.add(tileLyr);
     });
   </script>
 </head>
