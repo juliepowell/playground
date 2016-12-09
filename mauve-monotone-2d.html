@@ -23,14 +23,14 @@
   <script>
     require([
       "esri/Map",
-      "esri/views/SceneView",
+      "esri/views/MapView",
       "esri/layers/VectorTileLayer",
       "dojo/domReady!"
-    ], function(Map, SceneView, VectorTileLayer) {
+    ], function(Map, MapView, VectorTileLayer) {
       // Create a Map
       var map = new Map();
       // Make map view and bind it to the map
-      var view = new SceneView({
+      var view = new MapView({
         container: "viewDiv",
         map: map,
         zoom: 4
