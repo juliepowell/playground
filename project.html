@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>PE Map test</title>
+
+  <link rel="stylesheet" href="../../dijit/themes/claro/claro.css">
+  <link rel="stylesheet" href="../../esri/css/main.css">
+
+  <script>
+    var dojoConfig = {
+      async: true,
+      isDebug: true,
+      paths: {
+        esri: "../esri"
+      }
+    };
+  </script>
+  <script src="../../dojo/dojo.js"></script>
+  <script src="//jsdev.arcgis.com/4.0/"></script>
+
+  <script>
+    var map, view;
+    var projectLatLngToGeographic,
+        projectLatLngToWebMercator,
+        projectLatLngToHammer,
+        projectLatLngToSinusoidal,
+        projectLatLngToLambertAzimuthal;
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/geometry/SpatialReference",
+      "esri/tasks/QueryTask",
+      "esri/tasks/support/Query",
+      "esri/layers/GraphicsLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/geometry/support/graphicsUtils",
+      "esri/geometry/pe",
+      "dojo/domReady!"
+    ], function (Map,
+                 MapView,
+                 SpatialReference,
+                 QueryTask,
+                 Query,
+                 GraphicsLayer,
+                 SimpleRenderer,
+                 graphicsUtils,
+                 pe) {
+      var renderer = SimpleRenderer.fromJSON({
+        "type": "simple",
+        "symbol": {
+          "type": "esriSFS",
+          "style": "esriSFSSolid",
+          "color": [
+            239,
+            239,
+            239,
+            255
+          ],
+          "outline": {
+            "type": "esriSLS",
+            "style": "esriSLSSolid",
+            "color": [
+              208,
+              207,
+              212,
+              255
+            ],
+            "width": 0.4
+          }
+        }
+      });
+      var featureSet;
+      var coordSysMap = {};
+      projectLatLngToGeographic = function () {
+        var graphics = featureSet.features; // use 4326 graphics
+        recreateView(graphics);
+      };
+      projectLatLngToWebMercator = function () {
+        var graphics = projectGraphics(102100);
+        recreateView(graphics);
+      };
+      projectLatLngToHammer = function () {
+        var graphics = projectGraphics(54044);
+        recreateView(graphics);
+      };
+      projectLatLngToSinusoidal = function () {
+        var graphics = projectGraphics(53008);
+        recreateView(graphics);
+      };
+      projectLatLngToLambertAzimuthal = function () {
+        var graphics = projectGraphics(102020);
+        recreateView(graphics);
+      };
+      function projectGraphics(srWKID) {
+        var result = featureSet.features; // 4326 graphics
+        // clone the graphics
+        result = result.map(function (graphic) {
+          return graphic.clone();
+        });
+        var timeLabel = "project time for wkid " + srWKID;
+        var totalCoordCount = 0;
+        console.time(timeLabel);
+        // project each polygon
+        result.forEach(function (graphic) {
+          totalCoordCount += projectPolyogn(srWKID, graphic.geometry);
+        });
+        console.log("Number of coords: " + totalCoordCount);
+        console.timeEnd(timeLabel);
+        return result;
+      }
+      function projectPolyogn(srWKID, polygon) {
+        var projCS = coordSysMap[srWKID];
+        if (!projCS) {
+          projCS = pe.PeFactory.prototype.projcs(srWKID);
+          if (!projCS.ptr) {
+            console.error("projcs: " + srWKID + " not found");
+            return;
+          }
+          // save for reuse
+          coordSysMap[srWKID] = projCS;
+        }
+        // copy x/y values to coords
+        var coords = [];
+        polygon.rings.forEach(function (ring) {
+          ring.forEach(function (pt) {
+            coords.push(pt[0], pt[1]);
+          });
+        });
+        // project the coords
+        var numCoords = coords.length / 2;
+        var resultPointer = pe.PeCSTransformations2.prototype.geogToProj(projCS, numCoords, coords);
+        // read result
+        var projCoords = new Float64Array(pe.buffer, resultPointer.ptr, coords.length);
+        // update the polygon
+        var index = 0;
+        polygon.spatialReference = new SpatialReference(srWKID);
+        polygon.rings.forEach(function (ring) {
+          ring.forEach(function (pt) {
+            pt[0] = projCoords[index++];
+            pt[1] = projCoords[index++];
+          });
+        });
+        return numCoords;
+      }
+      function recreateView(graphics) {
+        if (map && view) {
+          map.destroy();
+          //view.destroy();
+        }
+        map = new Map();
+        view = new MapView({
+          center: [0, 0],
+          container: "mapDiv",
+          map: map
+        });
+        var gl = new GraphicsLayer();
+        gl.renderer = renderer;
+        gl.initialExtent = graphicsUtils.graphicsExtent(graphics);
+        gl.spatialReference = gl.initialExtent.spatialReference;
+        gl.addMany(graphics);
+        map.add(gl);
+      }
+      // get features
+      var queryTask = new QueryTask({ url: "http://sampleserver6.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer/1" });
+      queryTask.execute(new Query({
+        maxAllowableOffset: 0.05,
+        outSpatialReference: new SpatialReference(4326),
+        returnGeometry: true,
+        where: "1=1"
+      })).then(function (result) {
+        featureSet = result;
+        projectLatLngToGeographic();
+//        projectLatLngToWebMercator();
+//        projectLatLngToHammer();
+//        projectLatLngToSinusoidal();
+//        projectLatLngToLambertAzimuthal();
+      }).otherwise(function (error) {
+        console.log(error);
+      });
+    });
+  </script>
+</head>
+<body class="claro">
+  <div id="mapDiv" style="position: relative; width: 1100px; height: 700px; border: 1px solid #000;">
+    <div style="position: absolute; width:100%; text-align:center; z-index: 100; right: 5px; top: 5px;">
+      Select Projection:
+      <a href="javascript:void(0);" onclick="projectLatLngToGeographic();">Geographic</a>
+      &nbsp;
+      <a href="javascript:void(0);" onclick="projectLatLngToWebMercator();">Web Mercator</a>
+      &nbsp;
+      <a href="javascript:void(0);" onclick="projectLatLngToHammer();">Hammer</a>
+      &nbsp;
+      <a href="javascript:void(0);" onclick="projectLatLngToSinusoidal();">Sinusoidal</a>
+      &nbsp;
+      <a href="javascript:void(0);" onclick="projectLatLngToLambertAzimuthal();">South Pole Lambert Azimuthal Equal
+        Area</a>
+    </div>
+  </div>
+</body>
+</html>
