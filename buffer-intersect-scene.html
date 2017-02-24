@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Scene Layer - 4.3</title>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.3/esri/css/main.css">
+  <script src="https://jsdev.arcgis.com/4.3/"></script>
+  
+  <script type="text/plain" id="arcade-renderer">
+    
+    
+  </script>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/SceneView",
+      "esri/layers/SceneLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/MeshSymbol3D",
+      "esri/symbols/FillSymbol3DLayer",
+      "esri/renderers/UniqueValueRenderer",
+      "esri/core/Collection",
+      "dojo/domReady!"
+    ], function(Map, SceneView, SceneLayer, SimpleRenderer, MeshSymbol3D,
+      FillSymbol3DLayer, UniqueValueRenderer, Collection) {
+
+      // Create Map
+      var map = new Map({
+        basemap: "dark-gray",
+        ground: "world-elevation"
+      });
+
+      // Create the SceneView
+      var view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        camera: {
+          position: [-74.0338, 40.6913, 707],
+          tilt: 81,
+          heading: 50
+        }
+      });
+      
+      var rendererArcade = document.getElementById("arcade-renderer").text;
+
+      // Create SceneLayer and add to the map
+       layer = new SceneLayer({
+        url: "http://zrh-arcgis-server.esri.com/arcgis/rest/services/Hosted/SM__4326__US_Portland__Buildings/SceneServer",
+        popupEnabled: false
+      });
+      map.add(layer);
+
+      // Create MeshSymbol3D for symbolizing SceneLayer
+      var symbol = new MeshSymbol3D(
+        new FillSymbol3DLayer({
+          // If the value of material is not assigned, the default color will be grey
+          material: {
+            color: [244, 247, 134]
+          }
+        })
+      );
+      // Add the renderer to sceneLayer
+      layer.renderer = new SimpleRenderer({
+        symbol: symbol
+      });
+      
+      
+      view.then(function(){
+        layer.then(function(){
+          return view.goTo(layer.fullExtent);
+        }).then(function(){
+          
+          view.on("click", function(evt){
+            var point = evt.mapPoint;
+            
+//            var hitTestQuery = layer.createQuery();
+//            hitTestQuery.geometry = point;
+//            
+//            layer.f
+            
+            var query = layer.createQuery();
+            query.geometry = point;
+            query.distance = 0.25;
+            query.units = "miles";
+            query.outFields = ["*"];
+            // query.returnGeometry = true;
+            
+             console.log("query: ", query);
+            layer.queryFeatures(query).then(function(response){
+              console.log("response: ", response);
+            
+              return new Collection(response.features);
+              
+            }).then(function(features){
+              
+              layer.renderer = new UniqueValueRenderer({
+                
+                field: function(graphic){ 
+                  var value;
+                  var index = features.findIndex(function(feature){
+                    return feature.attributes.objectid === graphic.attributes.objectid;
+                  });
+                  if (index !== -1){
+                    value = "match";
+                  } else {
+                    value = "other";
+                  }
+                  return value;
+                },
+                uniqueValueInfos: [{
+                  value: "match",
+                  symbol:  new MeshSymbol3D({
+                    symbolLayers: [  new FillSymbol3DLayer({
+                       material: { color: "red" }
+                    }) ]
+                  })
+                }, {
+                  value: "other",
+                  symbol:  new MeshSymbol3D({
+                    symbolLayers: [  new FillSymbol3DLayer({
+                       material: { color: [244, 247, 134] }
+                    }) ]
+                  })
+                }]
+              });
+              
+            }).otherwise(function(error){
+              console.error("something happened: ", error);
+            });
+      
+        });
+       });
+      
+      });
+      
+    });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+</html>
