@@ -1,0 +1,772 @@
+<!-- 
+
+To run this demo, you need to replace 'YOUR_API_KEY' with an API key from the ArcGIS Developers dashboard.
+
+Sign up for a free account and get an API key.
+
+https://developers.arcgis.com/documentation/mapping-apis-and-services/get-started/
+
+ -->
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Directions widget | Sample | ArcGIS API for JavaScript 4.24</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #createSlideDiv {
+            background-color: white;
+            opacity: 0.9;
+            color: black;
+            padding: 6px;
+        }
+
+        #slidesDiv {
+            background-color: white;
+            opacity: 0.9;
+            color: black;
+            padding: 10px;
+            visibility: hidden;
+            bottom: 20px;
+            overflow-y: auto;
+            text-align: center;
+            height: 260px;
+        }
+
+        #slidesDiv .slide {
+            /* Show cursor as pointer when on a slide */
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+
+        #slidesDiv .slide .title {
+            /* Center the title text */
+            text-align: center;
+        }
+
+        /* Draw active slide with a nice border around the thumbnail */
+
+        #slidesDiv .slide.active img {
+            box-shadow: 0px 0px 12px black;
+            border-style: solid;
+            border-width: thin;
+            border-color: black;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.24/"></script>
+
+    <script type="module" src=https://js.arcgis.com/calcite-components/1.0.0-beta.83/calcite.esm.js></script>
+    <link rel="stylesheet" type="text/css" href=https://js.arcgis.com/calcite-components/1.0.0-beta.83/calcite.css />
+
+    <script>
+        require([
+            "esri/views/SceneView",
+            "esri/WebScene",
+            "esri/views/SceneView",
+            "esri/widgets/Directions",
+            "esri/layers/RouteLayer",
+            "esri/symbols/CIMSymbol",
+            "esri/webscene/Slide"
+        ], function (SceneView, WebScene, SceneView, Directions, RouteLayer, CIMSymbol, Slide) {
+            const apiKey = "AAPK77b01836d3f5476f8bd938854d43be104Yobwly0j_9TXa7IBCfKLq6F_ItZyJ6s0fzGpIenL_WJlqvG9u7Wzh0BDV8c3EMI";
+            const scene = new WebScene({
+                portalItem: {
+                    id: "4f6f0d7dfc7746c7bb6c7101de7bf52a"
+                }
+            });
+            const view = new SceneView({
+                map: scene,
+                container: "viewDiv"
+            });
+            let originSymbol = {
+                type: "cim",
+                data: {
+                    type: "CIMSymbolReference",
+                    symbol: {
+                        "type": "CIMPointSymbol",
+                        "symbolLayers": [{
+                            "type": "CIMVectorMarker",
+                            "enable": true,
+                            "anchorPoint": {
+                                "x": 0,
+                                "y": -2
+                            },
+                            "anchorPointUnits": "Relative",
+                            "dominantSizeAxis3D": "Y",
+                            "size": 10,
+                            "billboardMode3D": "FaceNearPlane",
+                            "frame": {
+                                "xmin": -5,
+                                "ymin": -5,
+                                "xmax": 5,
+                                "ymax": 5
+                            },
+                            "markerGraphics": [{
+                                "type": "CIMMarkerGraphic",
+                                "geometry": {
+                                    "rings": [
+                                        [
+                                            [
+                                                0,
+                                                5
+                                            ],
+                                            [
+                                                0.87,
+                                                4.92
+                                            ],
+                                            [
+                                                1.71,
+                                                4.7
+                                            ],
+                                            [
+                                                2.5,
+                                                4.33
+                                            ],
+                                            [
+                                                3.21,
+                                                3.83
+                                            ],
+                                            [
+                                                3.83,
+                                                3.21
+                                            ],
+                                            [
+                                                4.33,
+                                                2.5
+                                            ],
+                                            [
+                                                4.7,
+                                                1.71
+                                            ],
+                                            [
+                                                4.92,
+                                                0.87
+                                            ],
+                                            [
+                                                5,
+                                                0
+                                            ],
+                                            [
+                                                4.92,
+                                                -0.87
+                                            ],
+                                            [
+                                                4.7,
+                                                -1.71
+                                            ],
+                                            [
+                                                4.33,
+                                                -2.5
+                                            ],
+                                            [
+                                                3.83,
+                                                -3.21
+                                            ],
+                                            [
+                                                3.21,
+                                                -3.83
+                                            ],
+                                            [
+                                                2.5,
+                                                -4.33
+                                            ],
+                                            [
+                                                1.71,
+                                                -4.7
+                                            ],
+                                            [
+                                                0.87,
+                                                -4.92
+                                            ],
+                                            [
+                                                0,
+                                                -5
+                                            ],
+                                            [
+                                                -0.87,
+                                                -4.92
+                                            ],
+                                            [
+                                                -1.71,
+                                                -4.7
+                                            ],
+                                            [
+                                                -2.5,
+                                                -4.33
+                                            ],
+                                            [
+                                                -3.21,
+                                                -3.83
+                                            ],
+                                            [
+                                                -3.83,
+                                                -3.21
+                                            ],
+                                            [
+                                                -4.33,
+                                                -2.5
+                                            ],
+                                            [
+                                                -4.7,
+                                                -1.71
+                                            ],
+                                            [
+                                                -4.92,
+                                                -0.87
+                                            ],
+                                            [
+                                                -5,
+                                                0
+                                            ],
+                                            [
+                                                -4.92,
+                                                0.87
+                                            ],
+                                            [
+                                                -4.7,
+                                                1.71
+                                            ],
+                                            [
+                                                -4.33,
+                                                2.5
+                                            ],
+                                            [
+                                                -3.83,
+                                                3.21
+                                            ],
+                                            [
+                                                -3.21,
+                                                3.83
+                                            ],
+                                            [
+                                                -2.5,
+                                                4.33
+                                            ],
+                                            [
+                                                -1.71,
+                                                4.7
+                                            ],
+                                            [
+                                                -0.87,
+                                                4.92
+                                            ],
+                                            [
+                                                0,
+                                                5
+                                            ]
+                                        ]
+                                    ]
+                                },
+                                "symbol": {
+                                    "type": "CIMPolygonSymbol",
+                                    "symbolLayers": [{
+                                        "type": "CIMSolidFill",
+                                        "enable": true,
+                                        "color": [
+                                            255,
+                                            255,
+                                            255,
+                                            255
+                                        ]
+                                    }]
+                                }
+                            }],
+                            "scaleSymbolsProportionally": true,
+                            "respectFrame": true
+                        },
+                        {
+                            "type": "CIMVectorMarker",
+                            "enable": true,
+                            "colorLocked": true,
+                            "anchorPoint": {
+                                "x": 0,
+                                "y": -0.5
+                            },
+                            "anchorPointUnits": "Relative",
+                            "dominantSizeAxis3D": "Y",
+                            "size": 30,
+                            "billboardMode3D": "FaceNearPlane",
+                            "frame": {
+                                "xmin": 0,
+                                "ymin": 0,
+                                "xmax": 21,
+                                "ymax": 21
+                            },
+                            "markerGraphics": [{
+                                "type": "CIMMarkerGraphic",
+                                "geometry": {
+                                    "rings": [
+                                        [
+                                            [
+                                                17.17,
+                                                14.33
+                                            ],
+                                            [
+                                                16.97,
+                                                12.96
+                                            ],
+                                            [
+                                                16.38,
+                                                11.37
+                                            ],
+                                            [
+                                                12.16,
+                                                3.98
+                                            ],
+                                            [
+                                                11.2,
+                                                1.94
+                                            ],
+                                            [
+                                                10.5,
+                                                0
+                                            ],
+                                            [
+                                                9.8,
+                                                1.96
+                                            ],
+                                            [
+                                                8.84,
+                                                4.02
+                                            ],
+                                            [
+                                                4.61,
+                                                11.41
+                                            ],
+                                            [
+                                                4.02,
+                                                12.98
+                                            ],
+                                            [
+                                                3.83,
+                                                14.33
+                                            ],
+                                            [
+                                                3.96,
+                                                15.63
+                                            ],
+                                            [
+                                                4.34,
+                                                16.88
+                                            ],
+                                            [
+                                                4.95,
+                                                18.03
+                                            ],
+                                            [
+                                                5.78,
+                                                19.04
+                                            ],
+                                            [
+                                                6.8,
+                                                19.88
+                                            ],
+                                            [
+                                                7.95,
+                                                20.49
+                                            ],
+                                            [
+                                                9.2,
+                                                20.87
+                                            ],
+                                            [
+                                                10.5,
+                                                21
+                                            ],
+                                            [
+                                                11.8,
+                                                20.87
+                                            ],
+                                            [
+                                                13.05,
+                                                20.5
+                                            ],
+                                            [
+                                                14.2,
+                                                19.88
+                                            ],
+                                            [
+                                                15.22,
+                                                19.05
+                                            ],
+                                            [
+                                                16.05,
+                                                18.03
+                                            ],
+                                            [
+                                                16.66,
+                                                16.88
+                                            ],
+                                            [
+                                                17.04,
+                                                15.63
+                                            ],
+                                            [
+                                                17.17,
+                                                14.33
+                                            ]
+                                        ]
+                                    ]
+                                },
+                                "symbol": {
+                                    "type": "CIMPolygonSymbol",
+                                    "symbolLayers": [{
+                                        "type": "CIMSolidStroke",
+                                        "enable": true,
+                                        "capStyle": "Round",
+                                        "joinStyle": "Round",
+                                        "lineStyle3D": "Strip",
+                                        "miterLimit": 10,
+                                        "width": 0,
+                                        "color": [
+                                            110,
+                                            110,
+                                            110,
+                                            255
+                                        ]
+                                    },
+                                    {
+                                        "type": "CIMSolidFill",
+                                        "enable": true,
+                                        "color": [
+                                            49,
+                                            130,
+                                            189,
+                                            255
+                                        ]
+                                    }
+                                    ]
+                                }
+                            }],
+                            "scaleSymbolsProportionally": true,
+                            "respectFrame": true
+                        }
+                        ]
+                    }
+                }
+            };
+            let routeSymbol = {
+                type: "cim", // autocasts as CIMSymbol
+                data: {
+                    type: "CIMSymbolReference",
+                    symbol: {
+                        type: "CIMLineSymbol",
+                        symbolLayers: [{
+                            // arrow symbol
+                            type: "CIMVectorMarker",
+                            enable: true,
+                            size: 6,
+                            markerPlacement: {
+                                type: "CIMMarkerPlacementAlongLineSameSize", // places same size markers along the line
+                                endings: "WithHalfGap",
+                                placementTemplate: [19.5] // determines space between each arrow
+                            },
+                            frame: {
+                                xmin: -5,
+                                ymin: -5,
+                                xmax: 5,
+                                ymax: 5
+                            },
+                            markerGraphics: [{
+                                type: "CIMMarkerGraphic",
+                                geometry: {
+                                    rings: [
+                                        [
+                                            [-8, -5.47],
+                                            [-8, 5.6],
+                                            [1.96, -0.03],
+                                            [-8, -5.47]
+                                        ]
+                                    ]
+                                },
+                                symbol: {
+                                    // white fill for the arrow symbol
+                                    type: "CIMPolygonSymbol",
+                                    symbolLayers: [{
+                                        type: "CIMSolidFill",
+                                        enable: true,
+                                        color: [255, 255, 255, 255]
+                                    }]
+                                }
+                            }]
+                        },
+                        {
+                            // black 1px line symbol
+                            type: "CIMSolidStroke",
+                            enable: true,
+                            width: 5,
+                            color: [88, 101, 107, 200]
+                        },
+                        ]
+                    }
+                }
+            };
+            const middleSymbol = new CIMSymbol({
+                data: {
+                    type: "CIMSymbolReference",
+                    symbol: {
+                        "type": "CIMPointSymbol",
+                        "symbolLayers": [{
+                            "type": "CIMVectorMarker",
+                            "enable": true,
+                            "anchorPointUnits": "Relative",
+                            "dominantSizeAxis3D": "Y",
+                            "size": 15,
+                            "billboardMode3D": "FaceNearPlane",
+                            "frame": {
+                                "xmin": 0,
+                                "ymin": 0,
+                                "xmax": 17,
+                                "ymax": 17
+                            },
+                            "markerGraphics": [{
+                                "type": "CIMMarkerGraphic",
+                                "geometry": {
+                                    "rings": [
+                                        [
+                                            [
+                                                8.5,
+                                                16.58
+                                            ],
+                                            [
+                                                10.51,
+                                                10.41
+                                            ],
+                                            [
+                                                17,
+                                                10.41
+                                            ],
+                                            [
+                                                11.75,
+                                                6.59
+                                            ],
+                                            [
+                                                13.75,
+                                                0.42
+                                            ],
+                                            [
+                                                8.5,
+                                                4.23
+                                            ],
+                                            [
+                                                3.25,
+                                                0.42
+                                            ],
+                                            [
+                                                5.25,
+                                                6.59
+                                            ],
+                                            [
+                                                0,
+                                                10.41
+                                            ],
+                                            [
+                                                6.49,
+                                                10.41
+                                            ],
+                                            [
+                                                8.5,
+                                                16.58
+                                            ]
+                                        ]
+                                    ]
+                                },
+                                "symbol": {
+                                    "type": "CIMPolygonSymbol",
+                                    "symbolLayers": [{
+                                        "type": "CIMSolidStroke",
+                                        "enable": true,
+                                        "capStyle": "Round",
+                                        "joinStyle": "Round",
+                                        "lineStyle3D": "Strip",
+                                        "miterLimit": 10,
+                                        "width": 1,
+                                        "color": [
+                                            49,
+                                            130,
+                                            189,
+                                            255
+                                        ]
+                                    },
+                                    {
+                                        "type": "CIMSolidFill",
+                                        "enable": true,
+                                        "color": [
+                                            255,
+                                            255,
+                                            255,
+                                            255
+                                        ]
+                                    }
+                                    ]
+                                }
+                            }],
+                            "scaleSymbolsProportionally": true,
+                            "respectFrame": true
+                        }]
+                    }
+                }
+            });
+
+            let routeLayer = createNewRouteLayer();
+            let directionsWidget = new Directions({
+                layer: routeLayer,
+                visible: false,
+                apiKey,
+                view
+            });
+
+            function createNewRouteLayer() {
+                const newRouteLayer = new RouteLayer({
+                    defaultSymbols: {
+                        directionLines: {
+                            type: "simple-line",
+                            color: [105, 220, 255],
+                            width: 7,
+                            cap: "round",
+                            join: "round"
+                        },
+                        stops: {
+                            first: originSymbol,
+                            middle: middleSymbol,
+                            last: originSymbol
+                        },
+                        routeInfo: {
+                            type: "simple-line",
+                            width: 0
+                        }
+                    }
+                });
+                scene.layers.add(newRouteLayer);
+                return newRouteLayer;
+            }
+
+            let routeAction = {
+                title: "Add stop",
+                id: "add-stop",
+                className: "esri-icon-map-pin"
+            };
+            view.popup.actions.push(routeAction);
+
+            function addStop(location, title) {
+                const newStop = {
+                    geometry: location,
+                    name: title
+                };
+                if (!routeLayer.stops.getItemAt(0).name) {
+                    routeLayer.stops.getItemAt(0).name = title;
+                    routeLayer.stops.getItemAt(0).geometry = location;
+                } else if (!routeLayer.stops.getItemAt(1).name) {
+                    routeLayer.stops.getItemAt(1).name = title;
+                    routeLayer.stops.getItemAt(1).geometry = location;
+                } else {
+                    routeLayer.stops.add(newStop);
+                }
+                if (routeLayer.stops.getItemAt(0).name && routeLayer.stops.getItemAt(1).name) {
+                    directionsWidget.getDirections();
+                }
+            }
+            view.popup.on("trigger-action", function (event) {
+                // If the zoom-out action is clicked, fire the zoomOut() function
+                if (event.action.id === "add-stop") {
+                    addStop(view.popup.location, view.popup.title);
+                }
+            });
+
+            view.ui.add(directionsWidget, {
+                position: "top-right"
+            });
+
+            view.ui.add(["createSlideDiv", "slidesDiv"], "top-left");
+
+            function createSlideUI(slide, placement) {
+
+                const slideElement = document.createElement("div");
+                // Assign the ID of the slide to the <span> element
+                slideElement.id = slide.id;
+                slideElement.classList.add("slide");
+
+                const slidesDiv = document.getElementById("slidesDiv");
+                if (placement === "first") {
+                    slidesDiv.insertBefore(slideElement, slidesDiv.firstChild);
+                } else {
+                    slidesDiv.appendChild(slideElement);
+                }
+
+                const title = document.createElement("div");
+                title.innerText = slide.title.text;
+                // Place the title of the slide in the <div> element
+                slideElement.appendChild(title);
+
+                const img = new Image();
+                img.src = slide.thumbnail.url;
+                img.title = slide.title.text;
+                slideElement.appendChild(img);
+                slideElement.addEventListener("click", () => {
+
+                    const slides = document.querySelectorAll(".slide");
+                    Array.from(slides).forEach((node) => {
+                        node.classList.remove("active");
+                    });
+
+                    slideElement.classList.add("active");
+                    slide.applyTo(view);
+                });
+            }
+
+            view.when(() => {
+                document.getElementById("slidesDiv").style.visibility = "visible";
+                const slides = scene.presentation.slides;
+                slides.forEach(createSlideUI);
+                document.getElementById("createSlideButton").addEventListener("click", () => {
+                    Slide.createFrom(view).then((slide) => {
+                        let routeName = document.getElementById(
+                            "createSlideTitleInput"
+                        ).value;
+                        slide.title.text = routeName;
+                        /* --> starting to look into copying the existing route...
+                        const routeCopy = Object.assign({}, routeLayer);
+                        routeCopy.title = routeName;
+                        console.log(routeCopy);
+*/
+                        scene.presentation.slides.add(slide);
+                        createSlideUI(slide, "first");
+                        scene.updateFrom(view).then(function () {
+                            scene.save();
+                        });
+                    });
+                });
+                document.getElementById("createRouteButton").addEventListener("click", () => {
+                    routeLayer.visible = false;
+                    routeLayer = createNewRouteLayer();
+                    directionsWidget.layer = routeLayer;
+                    directionsWidget.visible = true;
+                });
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+    <div id="createSlideDiv" class="esri-widget">
+        <calcite-button id="createRouteButton" icon-start="pin-plus" round scale="l"></calcite-button>
+        Add route: <input type="text" id="createSlideTitleInput" size="10" />
+        <button id="createSlideButton">Add</button>
+    </div>
+    <div id="slidesDiv" class="esri-widget"></div>
+</body>
+
+</html>
